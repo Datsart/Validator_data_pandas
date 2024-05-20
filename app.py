@@ -2,9 +2,7 @@ import pandas as pd
 import re
 from datetime import datetime
 import requests
-from time import time
 
-start = time()
 # Чтение данных из CSV
 df = pd.read_csv('data.csv')
 columns = df.columns.tolist()
@@ -126,10 +124,10 @@ class Validator:
         list_words = self.info_dict['b_crm_contact__birthplace'].split(' ')
         try:
             if len(self.info_dict['b_crm_contact__birthplace']) <= 10 or len(list_words) < 3:
-                self.errors[self.info_dict['index']] += ['departament_error']
+                self.errors[self.info_dict['index']] += ['birthplace_error']
         except KeyError:
             if len(self.info_dict['b_crm_contact__birthplace']) <= 10 or len(list_words) < 3:
-                self.errors[self.info_dict['index']] = ['departament_error']
+                self.errors[self.info_dict['index']] = ['birthplace_error']
 
     def registration_address(self):
         '''проверка на адрес регистрации если меньше 10 символов или меньше 3х слов
@@ -187,13 +185,50 @@ def dev_dict(index, seria):
     return _dict
 
 
-all_errors = []
+content = {
+    'index': 0,
+    'Unnamed: 0': 0,
+    'nindex': 90286,
+    'b_crm_contact__first_name': 'Наталья',
+    'b_crm_contact__LAST_NAME': 'Кононенко',
+    'b_crm_contact__patronymic': 'Матвеевна',
+    'b_crm_contact__bdate': '1990-09-23',
+    'b_crm_contact__gender': 'жен',
+    'b_crm_contact__code': '012-321',
+    'b_crm_contact__series_and_number': '3212 8361745',
+    'b_crm_contact__department': 'МВД по Республике Адыгея',
+    'b_crm_contact__date_of_issue': '2021-06-18',
+    'b_crm_contact__birthplace': 'Россия',
+    'b_crm_contact__registration_address': 'республика Адыгея ,г. Майкоп ,ул. 12 Марта ,13...'
+}
+# проверка на введенный нами словарь 'content' с нашими данными
+try:
+    all_errors_content = []
+    for i in range(1):
+        obj = Validator(content)
+        print('\nПРОВЕРЯЕМ ВВЕДЕННЫЙ СЛОВАРЬ\n')
+        # Применяем все методы к объекту
+        for attr_name in dir(obj):
+            attr = getattr(obj, attr_name)
+            if callable(attr) and attr_name not in dir(Validator.__base__):
+                try:
+                    attr()
+                except TypeError:
+                    print(f"{attr_name} требует аргументы, пропускаем его")
+
+        if obj.print_errors():
+            all_errors_content.append(obj.print_errors())
+        print(i, ':', obj.dict_full_info_address, '\n')
+    print(f'Ошибки введенного словаря:\n{all_errors_content}')
+    print('\nДАЛЬШЕ ПРОВЕРКА DATAFRAME\n')
+except BaseException:
+    pass
 
 # Проходимся по всему DataFrame и создаем словари по каждой записи
+all_errors = []
 for i in range(len(df)):
     seria = df.iloc[i]
     obj = Validator(dev_dict(i, seria))
-
     # Применяем все методы к объекту
     for attr_name in dir(obj):
         attr = getattr(obj, attr_name)
@@ -210,5 +245,3 @@ for i in range(len(df)):
 # Вывод ошибок
 for error in all_errors:
     print(error)
-end = time()
-print(end - start, 'sec')
