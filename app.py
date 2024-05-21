@@ -43,12 +43,18 @@ class Validator:
             'b_crm_contact__patronymic']) is None:
             self.add_error('patronymic_space_error')
 
-    def date_format(self):
-        '''Проверка формата даты ГГГГ-ММ-ДД'''
+    def birtday_date_format(self):
+        '''Проверка формата даты ГГГГ-ММ-ДД;
+        проверка на возраст 14 лет'''
         try:
             date = datetime.strptime(self.info_dict['b_crm_contact__bdate'], '%Y-%m-%d')
-        except BaseException:
-            self.add_error('date_format_bd_error')
+            today = datetime.today()
+            age = today.year - date.year - ((today.month, today.day) < (date.month, date.day))
+
+            if age < 14:
+                self.add_error('birtday_date_format')
+        except Exception:
+            self.add_error('birtday_date_format')
 
     def departament_code(self):
         '''Проверка формата кода подразделения 111-111'''
@@ -148,12 +154,12 @@ content = {
     'b_crm_contact__first_name': 'Наталья',
     'b_crm_contact__LAST_NAME': 'Кононенко',
     'b_crm_contact__patronymic': 'Матвеевна',
-    'b_crm_contact__bdate': '1998-15-23',
+    'b_crm_contact__bdate': '2010-09-22',
     'b_crm_contact__gender': 'жен',
     'b_crm_contact__code': '012-321',
     'b_crm_contact__series_and_number': '3212 837745',
     'b_crm_contact__department': 'МВД по Республике Адыгея',
-    'b_crm_contact__date_of_issue': '2021-06-18',
+    'b_crm_contact__date_of_issue': '2024-09-21',
     'b_crm_contact__birthplace': 'Россия',
     'b_crm_contact__registration_address': 'республика Адыгея ,г. Майкоп ,ул. 12 Марта ,13...'
 }
@@ -177,27 +183,27 @@ try:
     print(f'Ошибки введенного словаря:\n{all_errors_content}')
     print('\nДАЛЬШЕ ПРОВЕРКА DATAFRAME\n')
 except BaseException as e:
-    print(f"Возникло исключение: {e}")
+    print(e)
 
-# # Проходимся по всему DataFrame и создаем словари по каждой записи
-# all_errors = []
-# for i in range(len(df)):
-#     seria = df.iloc[i]
-#     obj = Validator(dev_dict(i, seria))
-#     # Применяем все методы к объекту
-#     for attr_name in dir(obj):
-#         attr = getattr(obj, attr_name)
-#         if callable(attr) and attr_name not in dir(Validator.__base__):
-#             if not inspect.signature(attr).parameters:
-#                 try:
-#                     attr()
-#                 except TypeError:
-#                     print(f"{attr_name} требует аргументы, пропускаем его")
-#
-#     if obj.print_errors():
-#         all_errors.append(obj.print_errors())
-#     print(i, ':', obj.dict_full_info_address, '\n')
-#
-# # Вывод ошибок
-# for error in all_errors:
-#     print(error)
+# Проходимся по всему DataFrame и создаем словари по каждой записи
+all_errors = []
+for i in range(len(df)):
+    seria = df.iloc[i]
+    obj = Validator(dev_dict(i, seria))
+    # Применяем все методы к объекту
+    for attr_name in dir(obj):
+        attr = getattr(obj, attr_name)
+        if callable(attr) and attr_name not in dir(Validator.__base__):
+            if not inspect.signature(attr).parameters:
+                try:
+                    attr()
+                except TypeError:
+                    print(f"{attr_name} требует аргументы, пропускаем его")
+
+    if obj.print_errors():
+        all_errors.append(obj.print_errors())
+    print(i, ':', obj.dict_full_info_address, '\n')
+
+# Вывод ошибок
+for error in all_errors:
+    print(error)
