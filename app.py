@@ -62,11 +62,36 @@ class Validator:
             self.add_error('departament_code_error')
 
     def passport_number_series(self):
-        '''Проверка формата паспорта 0000 000000;
-        в серии 3 цифры подряд идти не могут в номере 3 цифры подряд идти не могут;
-        между номером и серией пробел'''
-        if re.search(r'^(?!.*(\d)\1\1)\d{4} (?!.*(\d)\2\2\2)\d{6}$',
-                     self.info_dict['b_crm_contact__series_and_number']) is None:
+        '''Проверка формата паспорта
+        0000 000000
+        00 00 000000
+        0000000000;
+        если 4 цифры подряд то ошибка'''
+        string = self.info_dict['b_crm_contact__series_and_number']
+        a = re.search(r'^\d{2} \d{2} \d{6}$', string)
+        b = re.search(r'^\d{4} \d{6}$', string)
+        c = re.search(r'^\d{10}$', string)
+        replace_string = string.replace(' ', '')
+        # проверка на длину цифр
+        if len(replace_string) != 10:
+            self.add_error('passport_error')
+        # проверка на формат
+        elif (a or b or c) is None:
+            self.add_error('passport_error')
+
+        # проверка на 4 одинаковых цифры
+        def check_string(s):
+            count = 1
+            for i in range(1, len(s)):
+                if s[i] == s[i - 1]:
+                    count += 1
+                    if count == 4:
+                        return False
+                else:
+                    count = 1
+            return True
+
+        if check_string(replace_string) is False:
             self.add_error('passport_error')
 
     def departament(self):
@@ -157,13 +182,14 @@ content = {
     'b_crm_contact__bdate': '2010-09-22',
     'b_crm_contact__gender': 'жен',
     'b_crm_contact__code': '012-321',
-    'b_crm_contact__series_and_number': '3212 837745',
+    'b_crm_contact__series_and_number': '31 11 337745',
     'b_crm_contact__department': 'МВД по Республике Адыгея',
     'b_crm_contact__date_of_issue': '2024-09-21',
     'b_crm_contact__birthplace': 'Россия',
     'b_crm_contact__registration_address': 'республика Адыгея ,г. Майкоп ,ул. 12 Марта ,13...'
 }
 
+# проверяем только введенный словарь
 try:
     all_errors_content = []
     for i in range(1):
